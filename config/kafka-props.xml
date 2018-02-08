@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<!-- KafkaBackside core properties.
+	These will eventually include host and port values
+	and other properties as required by various apps
+	-->
+
+<properties>
+
+	
+	<parameter name="KAFKA_SERVER_URL" value="localhost" />
+
+	<parameter name="KAFKA_SERVER_PORT" value="9092" />
+	
+	<!-- Plugin Connector names and classpaths -->
+	<list name="PlugInConnectors">
+	<!--  	<parameter name="ElasticSearch" value="org.topicquests.backside.kafka.connector.es.ElasticSearchConnector" /> --> 
+	</list>
+	
+
+</properties>
+

@@ -74,6 +74,7 @@ public class MessageProducer extends Thread implements IClosable {
 		props.put("value.serializer", StringSerializer.class.getName());
 		//TODO there may be other necessary key/value pairs
 		// but this survived FirstTest
+//https://kafka.apache.org/0110/javadoc/org/apache/kafka/clients/producer/KafkaProducer.html
 		producer = new KafkaProducer<String, String>(props);
 		messages = new ArrayList<String>();
 		topics = new ArrayList<String>();
@@ -158,6 +159,7 @@ public class MessageProducer extends Thread implements IClosable {
 	}
 	
 	void _sendMessage(String topic, String msg, String key, Integer partition) {
+//https://kafka.apache.org/0110/javadoc/org/apache/kafka/clients/producer/ProducerRecord.html		
 		ProducerRecord<String, String> pr = 
 				new ProducerRecord<String, String>(topic, partition, System.currentTimeMillis(), key, msg);
 		//TODO deal with asynch FutureCallback

@@ -46,7 +46,7 @@ public abstract class AbstractBaseConsumer extends ShutdownableThread implements
 	 * <code>topic</code>. It could be generalized to take a list of topics,
 	 * but this code supports one consumer for a topic.
 	 * @param e
-	 * @param groupId
+	 * @param groupId can be <code>null</code>
 	 * @param topic
 	 */
 	public AbstractBaseConsumer(IEnvironment e, String groupId, String topic) {
@@ -73,7 +73,9 @@ public abstract class AbstractBaseConsumer extends ShutdownableThread implements
 		props.put("auto.offset.reset", "earliest");
 //	    props.put("session.timeout.ms", "30000");
  	    //TODO there may be other key/values but these survived FirstText
+//https://kafka.apache.org/0110/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html
 		consumer = new KafkaConsumer<String, String>(props);
+		consumer.subscribe(Arrays.asList(topic));
 		//Kafka Consumer subscribes list of topics here.
 		//TODO call validateTopic
 		

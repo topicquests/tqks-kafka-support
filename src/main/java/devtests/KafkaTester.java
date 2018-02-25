@@ -13,28 +13,20 @@
  * See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package org.topicquests.backside.kafka.connector;
-
-import org.topicquests.support.api.IEnvironment;
+package devtests;
 
 /**
  * @author jackpark
  *
  */
-public abstract class AbstractBaseConnector {
-	protected IEnvironment environment;
+public class KafkaTester {
 
 	/**
-	 * 
+	 * @param args
 	 */
-	public AbstractBaseConnector(IEnvironment env) {
-		environment = env;
+	public static void main(String[] args) {
+		new FirstTest();
+
 	}
 
-	public abstract void close();
-	
-	/**
-	 * Allow extension to do its own initializations
-	 */
-	public abstract void initialize();
 }

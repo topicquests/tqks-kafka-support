@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, TopicQuests
+ * Copyright 2017,2018 TopicQuests
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.topicquests.backside.kafka.producer;
 import java.util.*;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.topicquests.backside.kafka.api.IClosable;
 import org.topicquests.support.api.IEnvironment;
@@ -33,13 +34,15 @@ import org.apache.kafka.common.serialization.StringSerializer;
  * Generalized so that any MessageProducer can send any topic to any partition/key pair
  * Modeled after a Kafka example
  * @see https://www.tutorialspoint.com/apache_kafka/apache_kafka_simple_producer_example.htm
+ * <p>
+ * This is a very simple MessageProducer (String):
+ * It only placed its given topic in Partition 0
+ * </p>
  */
 public class MessageProducer extends Thread implements IClosable {
 	private IEnvironment environment;
     private final KafkaProducer<String, String> producer;
     private boolean isRunning = true;
-   // private boolean isAsync;
-    //private final String topic;
     private List<String>messages;
     private List<String>topics;
     private List<Integer>partitions;
@@ -48,15 +51,11 @@ public class MessageProducer extends Thread implements IClosable {
 
 	/**
 	 * @param e
-//	 * @param topic
 	 * @param clientId TODO
-	 * @param isAsynchronous // ignored for now
 	 */
-	public MessageProducer(IEnvironment e/*, String clientId, boolean isAsynchronous*/) {
+	public MessageProducer(IEnvironment e, String clientId) {
 		super();
 		environment = e;
-//		this.topic = topic;
-	//	isAsync = isAsynchronous;
 		Properties props = new Properties();
 		String url = "localhost";
 		String port = "9092";
@@ -64,17 +63,13 @@ public class MessageProducer extends Thread implements IClosable {
 			url = (String)environment.getProperties().get("KAFKA_SERVER_URL");
 			port = (String)environment.getProperties().get("KAFKA_SERVER_PORT");
 		}
-		props.put("bootstrap.servers", url+":"+port);
-		props.put("acks", "1");
-		props.put("retries", "3");
-		props.put("linger.ms", "1");
-//		props.put("partitioner.class", "org.apache.kafka.clients.producer.internals.DefaultPartitioner");
-//		props.put("client.id", clientId);
-		props.put("key.serializer", StringSerializer.class.getName());
-		props.put("value.serializer", StringSerializer.class.getName());
-		//TODO there may be other necessary key/value pairs
-		// but this survived FirstTest
-//https://kafka.apache.org/0110/javadoc/org/apache/kafka/clients/producer/KafkaProducer.html
+		props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, url+":"+port);
+		props.put("acks", "all");
+		props.put("retries", "0");
+		props.put("partitioner.class", "org.apache.kafka.clients.producer.internals.DefaultPartitioner");
+		props.put(ProducerConfig.CLIENT_ID_CONFIG, clientId);
+		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+		props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 		producer = new KafkaProducer<String, String>(props);
 		messages = new ArrayList<String>();
 		topics = new ArrayList<String>();
@@ -101,6 +96,7 @@ public class MessageProducer extends Thread implements IClosable {
 	}
 
 	void checkValidTopic(String topic) {
+		environment.logDebug("MessageProducer.checkValidTopic "+topic+" "+validatedTopics);
 		if (!validatedTopics.contains(topic)) {
 			//TODO call validateTopic
 			validatedTopics.add(topic);
@@ -129,7 +125,9 @@ public class MessageProducer extends Thread implements IClosable {
 			keys.add(key);
 			messages.notify();
 		}
+		environment.logDebug("MessageProducer.sendMessage "+messages.size());
 	}
+	
 	public void run() {
 		String t = null;
 		String msg = null;
@@ -159,39 +157,12 @@ public class MessageProducer extends Thread implements IClosable {
 	}
 	
 	void _sendMessage(String topic, String msg, String key, Integer partition) {
-//https://kafka.apache.org/0110/javadoc/org/apache/kafka/clients/producer/ProducerRecord.html		
 		ProducerRecord<String, String> pr = 
-				new ProducerRecord<String, String>(topic, partition, System.currentTimeMillis(), key, msg);
-		//TODO deal with asynch FutureCallback
+			new ProducerRecord<String, String>(topic, partition, System.currentTimeMillis(), key, msg);
 		System.out.println("ProducerSend "+pr);
+		producer.send(pr); 
 		if (environment != null)
 			environment.logDebug("ProducerSend "+pr);
-		///////////////////
-		//Async is recommended since sync is blocking -
-		// need a callback
-		// see https://github.com/apache/kafka/blob/trunk/examples/src/main/java/kafka/examples/Producer.java
-		///////////////////
-	//	if (isAsync) {
-		//	try {
-				producer.send(pr);//.get();
-				producer.flush();
-				producer.close();
-		//	} catch (Exception e) {
-		//		if (environment != null)
-		//			environment.logError(e.getMessage(), e);
-		//		e.printStackTrace();
-		//	}			
-		//} else {
-		//	try {
-		//		producer.send(pr); //.get();
-		//		producer.flush();
-		//		producer.close();
-		//	} catch (Exception e) {
-		//		if (environment != null)
-		//			environment.logError(e.getMessage(), e);
-		//		e.printStackTrace();				
-		//	}
-		//}
 	}
 
 	

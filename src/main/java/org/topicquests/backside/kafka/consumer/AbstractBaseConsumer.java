@@ -17,6 +17,7 @@ package org.topicquests.backside.kafka.consumer;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -35,11 +36,13 @@ import kafka.utils.ZkUtils;
  * @author jackpark
  * @see https://github.com/apache/kafka/tree/trunk/examples
  */
-public abstract class AbstractBaseConsumer extends ShutdownableThread implements IClosable {
+public abstract class AbstractBaseConsumer extends Thread implements IClosable {
 	protected IEnvironment environment;
     protected final KafkaConsumer<String, String> consumer;
     private final String topic;
     protected boolean isRunning = true;
+    private ConsumerRecords<String, String> records = null;
+
     
 	/**
 	 * A consumer is interested in its <code>groupId</code> and its
@@ -50,7 +53,7 @@ public abstract class AbstractBaseConsumer extends ShutdownableThread implements
 	 * @param topic
 	 */
 	public AbstractBaseConsumer(IEnvironment e, String groupId, String topic) {
- 		super(topic, false);
+// 		super(topic, false);
  		this.topic = topic;
         System.out.println("ABC "+topic);
 		environment = e;
@@ -68,16 +71,19 @@ public abstract class AbstractBaseConsumer extends ShutdownableThread implements
 		props.put("group.id", gid); //TODO not sure about that
 		props.put("key.deserializer", StringDeserializer.class.getName());
 		props.put("value.deserializer", StringDeserializer.class.getName());
-		props.put("enable.auto.commit", "false"); //was true
+		props.put("enable.auto.commit", "false"); //if false, you have to commit later
 		props.put("auto.commit.interval.ms", "1000");
 		props.put("auto.offset.reset", "earliest");
 //	    props.put("session.timeout.ms", "30000");
  	    //TODO there may be other key/values but these survived FirstText
 //https://kafka.apache.org/0110/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html
 		consumer = new KafkaConsumer<String, String>(props);
-		consumer.subscribe(Arrays.asList(topic));
 		//Kafka Consumer subscribes list of topics here.
+		List<String>x = Collections.singletonList(topic);
+		environment.logDebug("AbstractBaseConsumer- "+x);
+		consumer.subscribe(x);
 		//TODO call validateTopic
+//		this.start();
 		
 	}
 
@@ -103,10 +109,6 @@ public abstract class AbstractBaseConsumer extends ShutdownableThread implements
 	@Override
 	public void close() {
 		isRunning = false;
-//		synchronized(consumer) {
-//            System.out.println("AbstractBaseConsumer.closing");
-//			consumer.close();
-//		}
 	}
 	
 	/**
@@ -117,18 +119,18 @@ public abstract class AbstractBaseConsumer extends ShutdownableThread implements
 	 */
 	public abstract boolean handleRecord(ConsumerRecord<String, String> record);
 	
-	/* (non-Javadoc)
-	 * @see kafka.utils.ShutdownableThread#doWork()
+	/**
+	 * Extension class must call this once it has the listener engaged
 	 */
-	@Override
-	public void doWork() {
-	    consumer.subscribe(Collections.singletonList(topic));
-		ConsumerRecords<String, String> records = null;
+	public void begin() {
+		this.start();
+	}
+
+	public void run() {
 		while (isRunning) {
-            //System.out.println("FFF "+records);
-			synchronized(consumer) {
-	          records = consumer.poll(10);
-			}
+	          records = consumer.poll(1000);
+	          if (!isRunning)
+	        	  return;
 	         if (records != null && records.count() > 0) {
 	 			System.out.println("AbstractBaseConsumer "+records);
 	 			if (environment != null)
@@ -136,9 +138,10 @@ public abstract class AbstractBaseConsumer extends ShutdownableThread implements
 	 			boolean isHandled = false;
 	 			for (ConsumerRecord cr: records) {
 	 				isHandled = handleRecord(cr);
-	 				if (isHandled)
-	 					consumer.commitSync();
+	 			//	if (isHandled)
+	 			//		consumer.commitSync();
 	 			}
+	 			consumer.commitSync();
 	 			///////////////
 	 			//Interesting edge case:
 	 			// suppose some record is not handled

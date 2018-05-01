@@ -40,7 +40,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
  * </p>
  */
 public class MessageProducer extends Thread implements IClosable {
-	private IEnvironment environment;
+	protected IEnvironment environment;
     private final KafkaProducer<String, String> producer;
     private boolean isRunning = true;
     private List<String>messages;
@@ -70,6 +70,7 @@ public class MessageProducer extends Thread implements IClosable {
 		props.put(ProducerConfig.CLIENT_ID_CONFIG, clientId);
 		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 		props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+		environment.logDebug("MessageProducer-");
 		producer = new KafkaProducer<String, String>(props);
 		messages = new ArrayList<String>();
 		topics = new ArrayList<String>();
@@ -77,6 +78,7 @@ public class MessageProducer extends Thread implements IClosable {
 		partitions = new ArrayList<Integer>();
 		keys = new ArrayList<String>();
 		this.start();
+		environment.logDebug("MessageProducer+");
 	}
 
 	/**

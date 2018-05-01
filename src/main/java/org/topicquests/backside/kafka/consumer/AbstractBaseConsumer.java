@@ -15,7 +15,6 @@
  */
 package org.topicquests.backside.kafka.consumer;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -29,7 +28,6 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 
 import kafka.admin.AdminUtils;
 import kafka.admin.RackAwareMode;
-import kafka.utils.ShutdownableThread;
 import kafka.utils.ZkUtils;
 
 /**

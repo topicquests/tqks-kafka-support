@@ -1,3 +1,10 @@
+#non-docker -- kafka from a download
+# http://kafka.apache.org/quickstart
+bin/zookeeper-server-start.sh config/zookeeper.properties
+bin/kafka-server-start.sh config/server.properties
+Create a Topic
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+
 # https://github.com/Landoop/fast-data-dev
 
 # Docker for Mac >= 1.12, Linux, Docker for Windows 10

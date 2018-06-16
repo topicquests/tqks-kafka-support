@@ -93,6 +93,7 @@ public class StringMessageConsumer extends Thread {
 	}
 
 	public void run() {
+		System.out.println("Consumer started");
 		while (isRunning) {
 	          records = consumer.poll(1000);
 	          if (!isRunning)
@@ -105,7 +106,7 @@ public class StringMessageConsumer extends Thread {
 	 			for (ConsumerRecord cr: records) {
 	 				isHandled = listener.acceptRecord(cr);
 	 			}
-//	 			consumer.commitSync();
+//	 			consumer.commitSync(); we are using autoCommit
 	 			///////////////
 	 			//Interesting edge case:
 	 			// suppose some record is not handled

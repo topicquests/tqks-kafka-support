@@ -51,7 +51,7 @@ public class MessageProducer extends Thread implements IClosable {
 
 	/**
 	 * @param e
-	 * @param clientId TODO
+	 * @param clientId
 	 */
 	public MessageProducer(IEnvironment e, String clientId) {
 		super();
@@ -64,9 +64,10 @@ public class MessageProducer extends Thread implements IClosable {
 			port = (String)environment.getProperties().get("KAFKA_SERVER_PORT");
 		}
 		props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, url+":"+port);
-		props.put("acks", "all");
-		props.put("retries", "0");
-		props.put("partitioner.class", "org.apache.kafka.clients.producer.internals.DefaultPartitioner");
+		//http://cloudurable.com/blog/kafka-tutorial-kafka-producer-advanced-java-examples/index.html
+		props.put(ProducerConfig.ACKS_CONFIG, "all");
+		props.put(ProducerConfig.RETRIES_CONFIG, "0");
+		props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, "org.apache.kafka.clients.producer.internals.DefaultPartitioner");
 		props.put(ProducerConfig.CLIENT_ID_CONFIG, clientId);
 		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 		props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());

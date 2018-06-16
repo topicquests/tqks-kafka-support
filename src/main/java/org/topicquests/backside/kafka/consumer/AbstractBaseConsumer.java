@@ -23,19 +23,21 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.topicquests.backside.kafka.api.IClosable;
-import org.topicquests.support.api.IEnvironment;
+import org.topicquests.support.RootEnvironment;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
 import kafka.admin.AdminUtils;
 import kafka.admin.RackAwareMode;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import kafka.utils.ZkUtils;
 
 /**
  * @author jackpark
  * @see https://github.com/apache/kafka/tree/trunk/examples
+ * NOTE: this base consumer is restricted to String deserializers for key and value
  */
 public abstract class AbstractBaseConsumer extends Thread implements IClosable {
-	protected IEnvironment environment;
+	protected RootEnvironment environment;
     protected final KafkaConsumer<String, String> consumer;
     private final String topic;
     protected boolean isRunning = true;
@@ -50,10 +52,10 @@ public abstract class AbstractBaseConsumer extends Thread implements IClosable {
 	 * @param groupId can be <code>null</code>
 	 * @param topic
 	 */
-	public AbstractBaseConsumer(IEnvironment e, String groupId, String topic) {
+	public AbstractBaseConsumer(RootEnvironment e, String groupId, String topic) {
 // 		super(topic, false);
  		this.topic = topic;
-        System.out.println("ABC "+topic);
+        System.out.println("ConsumerTopic "+topic);
 		environment = e;
 		String gid = groupId;
 		if (groupId == null)
@@ -62,16 +64,17 @@ public abstract class AbstractBaseConsumer extends Thread implements IClosable {
 		String url = "localhost";
 		String port = "9092";
 		if (environment != null && (String)environment.getProperties().get("KAFKA_SERVER_URL") != null) {
-			url = (String)environment.getProperties().get("KAFKA_SERVER_URL");
+			url = environment.getStringProperty("KAFKA_SERVER_URL");
 			port = (String)environment.getProperties().get("KAFKA_SERVER_PORT");
 		}
-		props.put("bootstrap.servers", url+":"+port);
-		props.put("group.id", gid); //TODO not sure about that
-		props.put("key.deserializer", StringDeserializer.class.getName());
-		props.put("value.deserializer", StringDeserializer.class.getName());
-		props.put("enable.auto.commit", "false"); //if false, you have to commit later
-		props.put("auto.commit.interval.ms", "1000");
-		props.put("auto.offset.reset", "earliest");
+		//note: could be a list, e.g. "localhost:9092,localhost:9093,localhost:9094"
+		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, url+":"+port);
+		props.put(ConsumerConfig.GROUP_ID_CONFIG, gid); //TODO not sure about that
+		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+		//props.put("enable.auto.commit", "false"); //if false, you have to commit later
+		//props.put("auto.commit.interval.ms", "1000");
+		//props.put("auto.offset.reset", "earliest");
 //	    props.put("session.timeout.ms", "30000");
  	    //TODO there may be other key/values but these survived FirstText
 //https://kafka.apache.org/0110/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html
@@ -85,6 +88,9 @@ public abstract class AbstractBaseConsumer extends Thread implements IClosable {
 		
 	}
 
+	public String getTopic() {
+		return topic;
+	}
 	/**
 	 * Validate the <code>topic</code>. If missing, create it.
 	 * @param util

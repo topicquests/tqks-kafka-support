@@ -16,6 +16,11 @@
 	<!--  	<parameter name="ElasticSearch" value="org.topicquests.backside.kafka.connector.es.ElasticSearchConnector" /> --> 
 	</list>
 	
+	<!-- App Topics -->
+	<!--  	These apply strictly to to apps embedded in
+		KafkaBackside.
+		Clients outside use the opposite values -->
+	<parameter name="ChatProducerTopic" value="chatout" />
 
 </properties>
 

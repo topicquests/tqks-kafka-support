@@ -39,8 +39,9 @@ public class FirstTest {
 
 	private final String
 		GROUP_ID 	= "foo",
-		CLIENT_ID	= "testClient",
-		TOPIC		= "mytopic";
+		PRODUCER_CLIENT_ID	= "testClient",
+		CONSUMER_CLIENT_ID	= "textConsumer",
+		TOPIC		= "topicmap";
 	/**
 	 * 
 	 */
@@ -50,11 +51,14 @@ public class FirstTest {
 		environment.logDebug("FirstTest-1");
 		consumer = new MyConsumer(environment);
 		environment.logDebug("FirstTest-2");
-		kProducer = new MessageProducer(environment, CLIENT_ID);
+		//try {
+		//	consumer.wait(1000);
+		//} catch (Exception e) {
+		//	environment.logError(e.getMessage(), e);
+		//}
+		kProducer = new MessageProducer(environment, PRODUCER_CLIENT_ID);
 		environment.logDebug("FirstTest-3");
 		runTest();
-//		consumer.close();
-//		kProducer.close();
 	}
 	
 	void runTest() {
@@ -68,9 +72,14 @@ public class FirstTest {
 
 		@Override
 		public boolean acceptRecord(ConsumerRecord record) {
+			try {
 			environment.logDebug("GOT "+record.topic()+" | "+record.toString());
 			System.out.println("GOT "+record.topic()+" "+record.toString());
 			return true;
+			} finally {
+				consumer.close();
+				kProducer.close();
+			}
 		}
 		
 	}
@@ -82,10 +91,13 @@ public class FirstTest {
 		}
 		
 	}
+	
 	class MyConsumer extends StringMessageConsumer {
+		private static final boolean isRewind = true;
 		
 		public MyConsumer(IEnvironment e) {
-			super(e, TOPIC, TOPIC, listener, true);
+			super(e, CONSUMER_CLIENT_ID, TOPIC, listener, isRewind);
+			
 		}
 		
 	}

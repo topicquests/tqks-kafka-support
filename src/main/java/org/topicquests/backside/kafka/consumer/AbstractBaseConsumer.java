@@ -39,7 +39,7 @@ import kafka.utils.ZkUtils;
 public abstract class AbstractBaseConsumer extends Thread implements IClosable {
 	protected RootEnvironment environment;
     protected final KafkaConsumer<String, String> consumer;
-    private final String topic;
+    //private final String topic;
     protected boolean isRunning = true;
     private ConsumerRecords<String, String> records = null;
 
@@ -53,13 +53,31 @@ public abstract class AbstractBaseConsumer extends Thread implements IClosable {
 	 * @param topic
 	 */
 	public AbstractBaseConsumer(RootEnvironment e, String groupId, String topic) {
-// 		super(topic, false);
- 		this.topic = topic;
+ 		//this.topic = topic;
         System.out.println("ConsumerTopic "+topic);
+		List<String>x = Collections.singletonList(topic);
+		Properties p = init(e, groupId, x);
+		consumer = new KafkaConsumer<String, String>(p);
+		//Kafka Consumer subscribes list of topics here.
+		environment.logDebug("AbstractBaseConsumer- "+x);
+		consumer.subscribe(x);	
+	}
+
+	public AbstractBaseConsumer(RootEnvironment e, String groupId, List<String> topics) {
+		Properties p = init(e, groupId, topics);
+		consumer = new KafkaConsumer<String, String>(p);
+		//Kafka Consumer subscribes list of topics here.
+		
+		environment.logDebug("AbstractBaseConsumer- "+topics);
+		consumer.subscribe(topics);	
+
+	}
+	
+	Properties init(RootEnvironment e, String groupId, List<String> topics) {
 		environment = e;
 		String gid = groupId;
 		if (groupId == null)
-			gid = topic;
+			gid = topics.get(0);
 		Properties props = new Properties();
 		String url = "localhost";
 		String port = "9092";
@@ -76,21 +94,10 @@ public abstract class AbstractBaseConsumer extends Thread implements IClosable {
 		//props.put("auto.commit.interval.ms", "1000");
 		//props.put("auto.offset.reset", "earliest");
 //	    props.put("session.timeout.ms", "30000");
- 	    //TODO there may be other key/values but these survived FirstText
-//https://kafka.apache.org/0110/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html
-		consumer = new KafkaConsumer<String, String>(props);
-		//Kafka Consumer subscribes list of topics here.
-		List<String>x = Collections.singletonList(topic);
-		environment.logDebug("AbstractBaseConsumer- "+x);
-		consumer.subscribe(x);
-		//TODO call validateTopic
-//		this.start();
-		
+		return props;
 	}
 
-	public String getTopic() {
-		return topic;
-	}
+	
 	/**
 	 * Validate the <code>topic</code>. If missing, create it.
 	 * @param util

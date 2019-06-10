@@ -70,4 +70,10 @@ public class SimpleChatApp extends AbstractKafkaApp
 		return true;
 	}
 
+	@Override
+	public void shutDown() {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

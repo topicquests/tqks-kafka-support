@@ -89,6 +89,12 @@ public class FirstTest {
 		public MyEnvironment() {
 			super("kafka-props.xml", "logger.properties");
 		}
+
+		@Override
+		public void shutDown() {
+			// TODO Auto-generated method stub
+			
+		}
 		
 	}
 	

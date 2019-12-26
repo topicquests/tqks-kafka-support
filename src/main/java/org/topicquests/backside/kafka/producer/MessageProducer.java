@@ -25,7 +25,6 @@ import org.topicquests.support.api.IEnvironment;
 
 import kafka.admin.AdminUtils;
 import kafka.admin.RackAwareMode;
-import kafka.utils.ZkUtils;
 
 import org.apache.kafka.common.serialization.StringSerializer;
 
@@ -52,8 +51,9 @@ public class MessageProducer extends Thread implements IClosable {
 	/**
 	 * @param e
 	 * @param clientId
+	 * @param useCompression
 	 */
-	public MessageProducer(IEnvironment e, String clientId) {
+	public MessageProducer(IEnvironment e, String clientId, boolean useCompression) {
 		super();
 		environment = e;
 		Properties props = new Properties();
@@ -63,8 +63,9 @@ public class MessageProducer extends Thread implements IClosable {
 			url = (String)environment.getProperties().get("KAFKA_SERVER_URL");
 			port = (String)environment.getProperties().get("KAFKA_SERVER_PORT");
 		}
+		if (useCompression)
+			props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "gzip");
 		props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, url+":"+port);
-		//http://cloudurable.com/blog/kafka-tutorial-kafka-producer-advanced-java-examples/index.html
 		props.put(ProducerConfig.ACKS_CONFIG, "all");
 		props.put(ProducerConfig.RETRIES_CONFIG, "0");
 		props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, "org.apache.kafka.clients.producer.internals.DefaultPartitioner");
@@ -82,26 +83,10 @@ public class MessageProducer extends Thread implements IClosable {
 		environment.logDebug("MessageProducer+");
 	}
 
-	/**
-	 * Validate the <code>topic</code>. If missing, create it.
-	 * @param util
-	 * @param topic
-	 * @param partitions
-	 * @param rep
-	 * @param properties
-	 * @param m
-	 */
-	void validateTopic(ZkUtils util, String topic,
-			Integer partitions, Integer rep, Properties properties, RackAwareMode m) {
-		if(!AdminUtils.topicExists(util, topic)){
-		    AdminUtils.createTopic(util, topic, partitions, rep, properties, m);
-		}
-	}
 
 	void checkValidTopic(String topic) {
 		environment.logDebug("MessageProducer.checkValidTopic "+topic+" "+validatedTopics);
 		if (!validatedTopics.contains(topic)) {
-			//TODO call validateTopic
 			validatedTopics.add(topic);
 		}
 	}

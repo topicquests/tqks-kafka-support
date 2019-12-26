@@ -18,7 +18,7 @@ package devtests;
 import java.util.Map;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.topicquests.backside.kafka.consumer.StringMessageConsumer;
+import org.topicquests.backside.kafka.consumer.StringConsumer;
 import org.topicquests.backside.kafka.consumer.api.IMessageConsumerListener;
 import org.topicquests.backside.kafka.producer.MessageProducer;
 import org.topicquests.support.RootEnvironment;
@@ -56,7 +56,7 @@ public class FirstTest {
 		//} catch (Exception e) {
 		//	environment.logError(e.getMessage(), e);
 		//}
-		kProducer = new MessageProducer(environment, PRODUCER_CLIENT_ID);
+		kProducer = new MessageProducer(environment, PRODUCER_CLIENT_ID, false);
 		environment.logDebug("FirstTest-3");
 		runTest();
 	}
@@ -98,11 +98,11 @@ public class FirstTest {
 		
 	}
 	
-	class MyConsumer extends StringMessageConsumer {
+	class MyConsumer extends StringConsumer {
 		private static final boolean isRewind = true;
 		
 		public MyConsumer(IEnvironment e) {
-			super(e, CONSUMER_CLIENT_ID, TOPIC, listener, isRewind);
+			super(e, CONSUMER_CLIENT_ID, TOPIC, listener, isRewind, 2);
 			
 		}
 		

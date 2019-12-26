@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, 2018 TopicQuests
+ * Copyright 2019, TopicQuests
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,17 @@
  */
 package org.topicquests.backside.kafka.consumer;
 
+import java.time.Duration;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Properties;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.topicquests.backside.kafka.consumer.api.IMessageConsumerListener;
@@ -30,37 +33,34 @@ import org.topicquests.support.api.IEnvironment;
 
 /**
  * @author jackpark
- * Modeled after a Kafka example
- * @see https://www.tutorialspoint.com/apache_kafka/apache_kafka_simple_producer_example.htm
- * <p>
- * This is a very simple message consumer:
- * <ul>
- * <li>It only looks in Partition 0</li>
- * <li>If told, it will rewind offset in that partition to 0 on bootup</li>
- * </ul>
- * <p>
- * 
+ *
  */
-public class StringMessageConsumer extends Thread {
+public class StringConsumer extends Thread {
+	private IEnvironment environment;
     private IMessageConsumerListener listener;
-	protected IEnvironment environment;
-    protected final KafkaConsumer<String, String> consumer;
+    private final KafkaConsumer<String, String> consumer;
     private final String topic;
-    protected boolean isRunning = true;
+    private boolean isRunning = true;
     private ConsumerRecords<String, String> records = null;
+    private final boolean rewind;
+    private final int pollTime;
 
 	/**
-	 * @param e
+	 * 
+	 * @param env
 	 * @param groupId
 	 * @param topic
 	 * @param l
-	 * @param isRewind
+	 * @param isRewind -- can boot to rewind
+	 * @param pollingSeconds
 	 */
-	public StringMessageConsumer(IEnvironment e, String groupId, String topic, IMessageConsumerListener l, boolean isRewind) {
+	public StringConsumer(IEnvironment env, String groupId, String topic,
+			IMessageConsumerListener l, boolean isRewind, int pollingSeconds) {
+		environment = env;
 		listener = l;
- 		this.topic = topic;
-        System.out.println("ABC "+topic);
-		environment = e;
+		this.topic = topic;
+		this.rewind = isRewind;
+		this.pollTime = pollingSeconds;
 		String gid = groupId;
 		if (groupId == null)
 			gid = topic;
@@ -78,13 +78,29 @@ public class StringMessageConsumer extends Thread {
 		props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true"); //if false, you have to commit later
 		props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "1000");
 		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-//	    props.put("session.timeout.ms", "30000");
+		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1);
+		props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 25000);
+		//props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, 600000);
 		consumer = new KafkaConsumer<String, String>(props);
-		TopicPartition tp = new TopicPartition(topic, 0);
-		List<TopicPartition> partitions = Collections.singletonList(tp);
-		consumer.assign(partitions);
-		if (isRewind) //Rewind to the beginning of the partition
-			consumer.seek(tp, 0);
+		consumer.subscribe(Collections.singletonList(this.topic), new ConsumerRebalanceListener() {
+
+			@Override
+			public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+				// TODO Auto-generated method stub
+				
+			}
+			//@see https://stackoverflow.com/questions/54480715/no-current-assignment-for-partition-occurs-even-after-poll-in-kafka
+			@Override
+			public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+				if (rewind) {
+	               for (TopicPartition tp : partitions) {
+	            	   consumer.seek(tp, 0);
+	                }
+				}
+				
+			}
+        });
+		isRunning = true;
 		this.start();
 	}
 
@@ -94,17 +110,26 @@ public class StringMessageConsumer extends Thread {
 
 	public void run() {
 		System.out.println("Consumer started");
+//		if (rewind) {//Rewind to the beginning of the partition
+//			TopicPartition tp = new TopicPartition(topic, 0);
+//			consumer.seek(tp, 0);
+//		}
+		boolean isHandled = false;
 		while (isRunning) {
-	          records = consumer.poll(1000);
+			System.out.println("Consumer c1");
+	          records = consumer.poll(Duration.ofSeconds(pollTime));
+	          System.out.println("Consumer c2 "+records.count());
 	          if (!isRunning)
 	        	  return;
 	         if (records != null && records.count() > 0) {
 	 			System.out.println("AbstractBaseConsumer "+records);
 	 			if (environment != null)
 	 				environment.logDebug("ConsumerGet "+records);
-	 			boolean isHandled = false;
+	 			isHandled = false;
 	 			for (ConsumerRecord cr: records) {
 	 				isHandled = listener.acceptRecord(cr);
+	 				//if (isHandled)
+	 				//	consumer.commitSync();
 	 			}
 //	 			consumer.commitSync(); we are using autoCommit
 	 			///////////////
@@ -118,5 +143,4 @@ public class StringMessageConsumer extends Thread {
 	         }
 		}
 	}
-
 }

@@ -18,11 +18,9 @@ package org.topicquests.backside.kafka.apps.chat;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.topicquests.backside.kafka.apps.AbstractKafkaApp;
-import org.topicquests.backside.kafka.consumer.AbstractBaseConsumer;
-import org.topicquests.backside.kafka.consumer.StringMessageConsumer;
+import org.topicquests.backside.kafka.consumer.StringConsumer;
 import org.topicquests.backside.kafka.consumer.api.IMessageConsumerListener;
 import org.topicquests.backside.kafka.producer.MessageProducer;
-import org.topicquests.support.RootEnvironment;
 
 /**
  * @author jackpark
@@ -33,7 +31,7 @@ import org.topicquests.support.RootEnvironment;
 public class SimpleChatApp extends AbstractKafkaApp 
 		implements IMessageConsumerListener {
 	private MessageProducer producer;
-	private StringMessageConsumer consumer;
+	private StringConsumer consumer;
 	private String clientId;
 	private final String outTopic;
 	private ChatUI ui;
@@ -46,9 +44,9 @@ public class SimpleChatApp extends AbstractKafkaApp
 		clientId = Long.toString(System.currentTimeMillis()); //TODO make into a config value
 		outTopic = getStringProperty("ChatProducerTopic");
 		// sends on a topic
-		producer = new MessageProducer(this, outTopic);
+		producer = new MessageProducer(this, outTopic, false);
 		// consumer listens to the sam topic
-		consumer = new StringMessageConsumer(this, clientId, outTopic, this, true);
+		consumer = new StringConsumer(this, clientId, outTopic, this, false, 1);
 	}
 
 	public void sendMessage(String msg) {

@@ -122,7 +122,7 @@ public class StringConsumer extends Thread {
 	          if (!isRunning)
 	        	  return;
 	         if (records != null && records.count() > 0) {
-	 			System.out.println("AbstractBaseConsumer "+records);
+	 			//System.out.println("AbstractBaseConsumer "+records);
 	 			if (environment != null)
 	 				environment.logDebug("ConsumerGet "+records);
 	 			isHandled = false;

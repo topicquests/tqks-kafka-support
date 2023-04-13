@@ -87,7 +87,7 @@ public class FirstTest {
 	class MyEnvironment extends RootEnvironment {
 
 		public MyEnvironment() {
-			super("kafka-props.xml", "logger.properties");
+			super("kafka-props.xml");
 		}
 
 		@Override

@@ -28,7 +28,7 @@ public abstract class AbstractKafkaApp extends RootEnvironment implements IKafka
 	 * 
 	 */
 	public AbstractKafkaApp() {
-		super("kafka-props.xml", "logger.properties");
+		super("kafka-props.xml");
 	}
 	
 	/* (non-Javadoc)
